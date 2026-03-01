@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 from typing import List, Dict
 from selenium.webdriver.common.by import By
@@ -41,6 +42,13 @@ class TripAdvisorScraper(BaseScraper):
                     continue
                 # Skip non-name text like "Read all reviews", "reviews"
                 if any(skip in name.lower() for skip in ['review', 'read all', 'write a', 'see all']):
+                    continue
+                # Skip long descriptions that TripAdvisor shows as link text
+                if len(name) > 80 or name.count('.') >= 2 or name.count(',') >= 3:
+                    continue
+                # Strip leading numbering ("1. Haile Resort" -> "Haile Resort")
+                name = re.sub(r'^\d+\.\s*', '', name).strip()
+                if not name:
                     continue
 
                 seen_names.add(name)
@@ -90,6 +98,11 @@ class TripAdvisorScraper(BaseScraper):
                     continue
                 if any(skip in name.lower() for skip in ['review', 'read all', 'write a', 'see all']):
                     continue
+                if len(name) > 80 or name.count('.') >= 2 or name.count(',') >= 3:
+                    continue
+                name = re.sub(r'^\d+\.\s*', '', name).strip()
+                if not name:
+                    continue
 
                 seen_names.add(name)
 
@@ -136,6 +149,11 @@ class TripAdvisorScraper(BaseScraper):
                 if not name or len(name) < 3 or name in seen_names:
                     continue
                 if any(skip in name.lower() for skip in ['review', 'read all', 'write a', 'see all']):
+                    continue
+                if len(name) > 80 or name.count('.') >= 2 or name.count(',') >= 3:
+                    continue
+                name = re.sub(r'^\d+\.\s*', '', name).strip()
+                if not name:
                     continue
 
                 seen_names.add(name)
