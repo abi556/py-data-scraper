@@ -47,205 +47,226 @@ def main():
     logger.info("Launching Chrome browser (English)...")
     driver = create_driver(headless=False)
 
+    # Each phase is completely independent - failures in one don't affect others
+    # == 1. Google Maps ==================================================
+    logger.info("-" * 40)
+    logger.info("PHASE 1: Google Maps")
+    logger.info("-" * 40)
+
     try:
-        # == 1. Google Maps ==================================================
-        logger.info("-" * 40)
-        logger.info("PHASE 1: Google Maps")
-        logger.info("-" * 40)
+        gm_scraper = GoogleMapsScraper(driver=driver)
 
-        try:
-            gm_scraper = GoogleMapsScraper(driver=driver)
+        service_types = [
+            'hotels',
+            'motels',
+            'resorts',
+            'lodges',
+            'guest house',
+            'restaurants',
+            'tour agency',
+            'car rental',
+            'boat rental',
+            'helicopter ride',
+        ]
 
-            service_types = [
-                'hotels',
-                'motels',
-                'resorts',
-                'lodges',
-                'guest house',
-                'restaurants',
-                'tour agency',
-                'car rental',
-                'boat rental',
-                'helicopter ride',
-            ]
-
-            for service in service_types:
-                logger.info(f"Scraping '{service}' from Google Maps...")
-                try:
-                    data = gm_scraper.search_arbaminch_services(service)
-                    all_data.extend(data)
-                    logger.info(f"  -> Got {len(data)} results")
-                except Exception as e:
-                    logger.error(f"  -> Error scraping {service}: {e}")
-                time.sleep(3)
-        except Exception as e:
-            logger.error(f"Error in Google Maps scraping phase: {e}")
-
-        # == 2. TripAdvisor ==================================================
-        logger.info("-" * 40)
-        logger.info("PHASE 2: TripAdvisor")
-        logger.info("-" * 40)
-
-        try:
-            ta_scraper = TripAdvisorScraper(driver=driver)
-
-            logger.info("Scraping hotels from TripAdvisor...")
+        for service in service_types:
+            logger.info(f"Scraping '{service}' from Google Maps...")
             try:
-                hotels = ta_scraper.scrape_arbaminch_hotels()
-                all_data.extend(hotels)
-                logger.info(f"  -> Got {len(hotels)} hotels")
+                data = gm_scraper.search_arbaminch_services(service)
+                all_data.extend(data)
+                logger.info(f"  -> Got {len(data)} results")
             except Exception as e:
-                logger.error(f"  -> Error scraping hotels: {e}")
+                logger.error(f"  -> Error scraping {service}: {e}")
             time.sleep(3)
+    except Exception as e:
+        logger.error(f"Error in Google Maps scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
 
-            logger.info("Scraping restaurants from TripAdvisor...")
-            try:
-                restaurants = ta_scraper.scrape_arbaminch_restaurants()
-                all_data.extend(restaurants)
-                logger.info(f"  -> Got {len(restaurants)} restaurants")
-            except Exception as e:
-                logger.error(f"  -> Error scraping restaurants: {e}")
-            time.sleep(3)
+    # == 2. TripAdvisor ==================================================
+    logger.info("-" * 40)
+    logger.info("PHASE 2: TripAdvisor")
+    logger.info("-" * 40)
 
-            logger.info("Scraping attractions from TripAdvisor...")
-            try:
-                attractions = ta_scraper.scrape_arbaminch_things_to_do()
-                all_data.extend(attractions)
-                logger.info(f"  -> Got {len(attractions)} attractions")
-            except Exception as e:
-                logger.error(f"  -> Error scraping attractions: {e}")
-        except Exception as e:
-            logger.error(f"Error in TripAdvisor scraping phase: {e}")
+    try:
+        ta_scraper = TripAdvisorScraper(driver=driver)
 
-        # == 3. Booking.com ==================================================
-        logger.info("-" * 40)
-        logger.info("PHASE 3: Booking.com")
-        logger.info("-" * 40)
-
+        logger.info("Scraping hotels from TripAdvisor...")
         try:
-            booking_scraper = BookingScraper(driver=driver)
-
-            logger.info("Scraping accommodations from Booking.com...")
-            try:
-                accommodations = booking_scraper.scrape_arbaminch_accommodations()
-                all_data.extend(accommodations)
-                logger.info(f"  -> Got {len(accommodations)} accommodations")
-            except Exception as e:
-                logger.error(f"  -> Error scraping accommodations: {e}")
+            hotels = ta_scraper.scrape_arbaminch_hotels()
+            all_data.extend(hotels)
+            logger.info(f"  -> Got {len(hotels)} hotels")
         except Exception as e:
-            logger.error(f"Error in Booking.com scraping phase: {e}")
+            logger.error(f"  -> Error scraping hotels: {e}")
+        time.sleep(3)
 
-        # == 4. Expedia ======================================================
-        logger.info("-" * 40)
-        logger.info("PHASE 4: Expedia")
-        logger.info("-" * 40)
-
+        logger.info("Scraping restaurants from TripAdvisor...")
         try:
-            expedia_scraper = ExpediaScraper(driver=driver)
-
-            logger.info("Scraping hotels from Expedia...")
-            try:
-                hotels = expedia_scraper.scrape_arbaminch_hotels()
-                all_data.extend(hotels)
-                logger.info(f"  -> Got {len(hotels)} hotels")
-            except Exception as e:
-                logger.error(f"  -> Error scraping hotels: {e}")
+            restaurants = ta_scraper.scrape_arbaminch_restaurants()
+            all_data.extend(restaurants)
+            logger.info(f"  -> Got {len(restaurants)} restaurants")
         except Exception as e:
-            logger.error(f"Error in Expedia scraping phase: {e}")
+            logger.error(f"  -> Error scraping restaurants: {e}")
+        time.sleep(3)
 
-        # == 5. Agoda =========================================================
-        logger.info("-" * 40)
-        logger.info("PHASE 5: Agoda")
-        logger.info("-" * 40)
-
+        logger.info("Scraping attractions from TripAdvisor...")
         try:
-            agoda_scraper = AgodaScraper(driver=driver)
-
-            logger.info("Scraping hotels from Agoda...")
-            try:
-                hotels = agoda_scraper.scrape_arbaminch_hotels()
-                all_data.extend(hotels)
-                logger.info(f"  -> Got {len(hotels)} hotels")
-            except Exception as e:
-                logger.error(f"  -> Error scraping hotels: {e}")
+            attractions = ta_scraper.scrape_arbaminch_things_to_do()
+            all_data.extend(attractions)
+            logger.info(f"  -> Got {len(attractions)} attractions")
         except Exception as e:
-            logger.error(f"Error in Agoda scraping phase: {e}")
+            logger.error(f"  -> Error scraping attractions: {e}")
+    except Exception as e:
+        logger.error(f"Error in TripAdvisor scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
 
-        # == 6. Tour Guides - tourHQ ==========================================
-        logger.info("-" * 40)
-        logger.info("PHASE 6: tourHQ (Tour Guides)")
-        logger.info("-" * 40)
+    # == 3. Booking.com ==================================================
+    logger.info("-" * 40)
+    logger.info("PHASE 3: Booking.com")
+    logger.info("-" * 40)
 
+    try:
+        booking_scraper = BookingScraper(driver=driver)
+
+        logger.info("Scraping accommodations from Booking.com...")
         try:
-            tourhq_scraper = TourHQScraper(driver=driver)
-
-            logger.info("Scraping tour guides from tourHQ...")
-            try:
-                guides = tourhq_scraper.scrape_arbaminch_guides()
-                all_data.extend(guides)
-                logger.info(f"  -> Got {len(guides)} tour guides")
-            except Exception as e:
-                logger.error(f"  -> Error scraping tour guides: {e}")
+            accommodations = booking_scraper.scrape_arbaminch_accommodations()
+            all_data.extend(accommodations)
+            logger.info(f"  -> Got {len(accommodations)} accommodations")
         except Exception as e:
-            logger.error(f"Error in tourHQ scraping phase: {e}")
+            logger.error(f"  -> Error scraping accommodations: {e}")
+    except Exception as e:
+        logger.error(f"Error in Booking.com scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
 
-        # == 7. Tour Guides - ToursByLocals ===================================
-        logger.info("-" * 40)
-        logger.info("PHASE 7: ToursByLocals (Tour Guides)")
-        logger.info("-" * 40)
+    # == 4. Expedia ======================================================
+    logger.info("-" * 40)
+    logger.info("PHASE 4: Expedia")
+    logger.info("-" * 40)
 
+    try:
+        expedia_scraper = ExpediaScraper(driver=driver)
+
+        logger.info("Scraping hotels from Expedia...")
         try:
-            tbl_scraper = ToursByLocalsScraper(driver=driver)
-
-            logger.info("Scraping tour guides from ToursByLocals...")
-            try:
-                guides = tbl_scraper.scrape_arbaminch_guides()
-                all_data.extend(guides)
-                logger.info(f"  -> Got {len(guides)} tour guides")
-            except Exception as e:
-                logger.error(f"  -> Error scraping tour guides: {e}")
+            hotels = expedia_scraper.scrape_arbaminch_hotels()
+            all_data.extend(hotels)
+            logger.info(f"  -> Got {len(hotels)} hotels")
         except Exception as e:
-            logger.error(f"Error in ToursByLocals scraping phase: {e}")
+            logger.error(f"  -> Error scraping hotels: {e}")
+    except Exception as e:
+        logger.error(f"Error in Expedia scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
 
-        # == 8. Tour Guides - TripAdvisor =====================================
-        logger.info("-" * 40)
-        logger.info("PHASE 8: TripAdvisor (Tour Guides)")
-        logger.info("-" * 40)
+    # == 5. Agoda =========================================================
+    logger.info("-" * 40)
+    logger.info("PHASE 5: Agoda")
+    logger.info("-" * 40)
 
+    try:
+        agoda_scraper = AgodaScraper(driver=driver)
+
+        logger.info("Scraping hotels from Agoda...")
         try:
-            ta_guide_scraper = TripAdvisorGuideScraper(driver=driver)
-
-            logger.info("Scraping tour guides from TripAdvisor...")
-            try:
-                guides = ta_guide_scraper.scrape_arbaminch_guides()
-                all_data.extend(guides)
-                logger.info(f"  -> Got {len(guides)} tour guides")
-            except Exception as e:
-                logger.error(f"  -> Error scraping tour guides: {e}")
+            hotels = agoda_scraper.scrape_arbaminch_hotels()
+            all_data.extend(hotels)
+            logger.info(f"  -> Got {len(hotels)} hotels")
         except Exception as e:
-            logger.error(f"Error in TripAdvisor guide scraping phase: {e}")
+            logger.error(f"  -> Error scraping hotels: {e}")
+    except Exception as e:
+        logger.error(f"Error in Agoda scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
 
-        # == 9. Arba Minch Local Directory ===================================
-        logger.info("-" * 40)
-        logger.info("PHASE 9: Arba Minch Local Directory")
-        logger.info("-" * 40)
+    # == 6. Tour Guides - tourHQ ==========================================
+    logger.info("-" * 40)
+    logger.info("PHASE 6: tourHQ (Tour Guides)")
+    logger.info("-" * 40)
 
+    try:
+        tourhq_scraper = TourHQScraper(driver=driver)
+
+        logger.info("Scraping tour guides from tourHQ...")
         try:
-            local_dir_scraper = LocalDirectoryScraper(driver=driver)
-
-            logger.info("Scraping all categories from Local Directory...")
-            try:
-                businesses = local_dir_scraper.scrape_all_categories()
-                all_data.extend(businesses)
-                logger.info(f"  -> Got {len(businesses)} businesses")
-            except Exception as e:
-                logger.error(f"  -> Error scraping local directory: {e}")
+            guides = tourhq_scraper.scrape_arbaminch_guides()
+            all_data.extend(guides)
+            logger.info(f"  -> Got {len(guides)} tour guides")
         except Exception as e:
-            logger.error(f"Error in Local Directory scraping phase: {e}")
+            logger.error(f"  -> Error scraping tour guides: {e}")
+    except Exception as e:
+        logger.error(f"Error in tourHQ scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
 
-    finally:
+    # == 7. Tour Guides - ToursByLocals ===================================
+    logger.info("-" * 40)
+    logger.info("PHASE 7: ToursByLocals (Tour Guides)")
+    logger.info("-" * 40)
+
+    try:
+        tbl_scraper = ToursByLocalsScraper(driver=driver)
+
+        logger.info("Scraping tour guides from ToursByLocals...")
+        try:
+            guides = tbl_scraper.scrape_arbaminch_guides()
+            all_data.extend(guides)
+            logger.info(f"  -> Got {len(guides)} tour guides")
+        except Exception as e:
+            logger.error(f"  -> Error scraping tour guides: {e}")
+    except Exception as e:
+        logger.error(f"Error in ToursByLocals scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
+
+    # == 8. Tour Guides - TripAdvisor =====================================
+    logger.info("-" * 40)
+    logger.info("PHASE 8: TripAdvisor (Tour Guides)")
+    logger.info("-" * 40)
+
+    try:
+        ta_guide_scraper = TripAdvisorGuideScraper(driver=driver)
+
+        logger.info("Scraping tour guides from TripAdvisor...")
+        try:
+            guides = ta_guide_scraper.scrape_arbaminch_guides()
+            all_data.extend(guides)
+            logger.info(f"  -> Got {len(guides)} tour guides")
+        except Exception as e:
+            logger.error(f"  -> Error scraping tour guides: {e}")
+    except Exception as e:
+        logger.error(f"Error in TripAdvisor guide scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
+
+    # == 9. Arba Minch Local Directory ===================================
+    logger.info("-" * 40)
+    logger.info("PHASE 9: Arba Minch Local Directory")
+    logger.info("-" * 40)
+
+    try:
+        local_dir_scraper = LocalDirectoryScraper(driver=driver)
+
+        logger.info("Scraping all categories from Local Directory...")
+        try:
+            businesses = local_dir_scraper.scrape_all_categories()
+            all_data.extend(businesses)
+            logger.info(f"  -> Got {len(businesses)} businesses")
+        except Exception as e:
+            logger.error(f"  -> Error scraping local directory: {e}")
+    except Exception as e:
+        logger.error(f"Error in Local Directory scraping phase: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
+
+    # Ensure driver is always closed, even if something unexpected happens
+    try:
         logger.info("Closing browser...")
         driver.quit()
+    except Exception as e:
+        logger.warning(f"Error closing browser: {e}")
 
     # == Post-process: deduplicate & filter ====================================
     if all_data:
